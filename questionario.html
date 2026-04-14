@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COOPANEST — Pesquisa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  /* ── CONFIGURAÇÃO ── edite apenas estas variáveis */
+  :root {
+    --verde:       #1a6e40;
+    --verde-mid:   #2d8a56;
+    --verde-light: #e8f5ee;
+    --verde-pale:  #f4faf7;
+    --cinza-1:     #1c1c1a;
+    --cinza-2:     #4a4a47;
+    --cinza-3:     #8a8a86;
+    --cinza-4:     #d4d4d0;
+    --cinza-5:     #f5f5f2;
+    --branco:      #ffffff;
+    --danger:      #c0392b;
+    --fonte-titulo: 'DM Serif Display', serif;
+    --fonte-corpo:  'DM Sans', sans-serif;
+    --radius:       12px;
+    --sombra:       0 2px 16px rgba(0,0,0,.07);
+
+    /* BACKEND — substitua pela URL do seu Apps Script */
+    --APPS_SCRIPT_URL: "";
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--fonte-corpo);
+    background: var(--cinza-5);
+    color: var(--cinza-1);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .wrapper { max-width: 620px; margin: 0 auto; }
+
+  /* Cabeçalho */
+  .form-header {
+    background: var(--verde);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 2rem 2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .form-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+  }
+  .form-header .logo {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    color: rgba(255,255,255,.65);
+    text-transform: uppercase;
+    margin-bottom: .75rem;
+  }
+  .form-header h1 {
+    font-family: var(--fonte-titulo);
+    font-size: 1.75rem;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: .5rem;
+  }
+  .form-header p {
+    font-size: .875rem;
+    color: rgba(255,255,255,.8);
+    line-height: 1.6;
+  }
+  .tempo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: .75rem;
+    font-size: .75rem;
+    color: rgba(255,255,255,.7);
+  }
+  .tempo-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #5dcaa5;
+  }
+
+  /* Barra de progresso */
+  .progress-bar {
+    background: var(--cinza-4);
+    height: 3px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--verde-mid);
+    transition: width .4s ease;
+    width: 0%;
+  }
+
+  /* Corpo do form */
+  .form-body {
+    background: var(--branco);
+    border: 1px solid var(--cinza-4);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 0 0 1.5rem;
+  }
+
+  /* Bloco */
+  .bloco {
+    border-left: 3px solid var(--cinza-4);
+    margin: 1.5rem 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--cinza-5);
+    transition: border-color .2s;
+  }
+  .bloco:focus-within { border-left-color: var(--verde); }
+  .bloco.b-producao { border-left-color: #d4380d; }
+  .bloco.b-barreira { border-left-color: #1677ff; }
+  .bloco.b-devolucao { border-left-color: #722ed1; }
+  .bloco.b-entrega   { border-left-color: #08979c; }
+  .bloco.b-mudanca   { border-left-color: var(--verde); }
+
+  .bloco-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: .5rem;
+    flex-wrap: wrap;
+  }
+  .bloco-num {
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--cinza-3);
+  }
+  .badge {
+    font-size: .65rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: .04em;
+  }
+  .badge-opt  { background: var(--verde-light); color: var(--verde); }
+  .badge-req  { background: #fff2e8; color: #d4380d; }
+  .badge-key  { background: #e6f4ff; color: #1677ff; }
+
+  .bloco h2 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--cinza-1);
+    margin-bottom: .25rem;
+  }
+  .bloco-desc {
+    font-size: .8rem;
+    color: var(--cinza-3);
+    margin-bottom: 1rem;
+    line-height: 1.55;
+  }
+
+  /* Pergunta */
+  .pergunta { margin-bottom: 1.25rem; }
+  .pergunta:last-child { margin-bottom: 0; }
+  .pergunta-texto {
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--cinza-1);
+    margin-bottom: .25rem;
+    line-height: 1.5;
+  }
+  .pergunta-sub {
+    font-size: .78rem;
+    color: var(--cinza-3);
+    margin-bottom: .75rem;
+    line-height: 1.5;
+  }
+
+  /* Opções radio/checkbox */
+  .opcoes { display: flex; flex-direction: column; gap: 6px; }
+
+  .opcao-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--branco);
+    border: 1px solid var(--cinza-4);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    font-size: .875rem;
+    color: var(--cinza-2);
+    line-height: 1.45;
+  }
+  .opcao-label:hover { border-color: var(--verde-mid); background: var(--verde-pale); }
+  .opcao-label.selecionada {
+    border-color: var(--verde);
+    background: var(--verde-light);
+    color: var(--verde);
+    font-weight: 500;
+  }
+  .opcao-label input[type="radio"],
+  .opcao-label input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--verde);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Input texto/textarea */
+  input[type="text"], textarea {
+    width: 100%;
+    background: var(--branco);
+    border: 1px solid var(--cinza-4);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--fonte-corpo);
+    font-size: .875rem;
+    color: var(--cinza-1);
+    transition: border-color .15s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--verde);
+  }
+  textarea { min-height: 80px; }
+
+  /* Campo "outro" */
+  .campo-outro {
+    margin-top: 6px;
+    display: none;
+  }
+  .campo-outro.visivel { display: block; }
+
+  /* Erro */
+  .erro-msg {
+    font-size: .75rem;
+    color: var(--danger);
+    margin-top: 4px;
+    display: none;
+  }
+  .bloco.com-erro { border-left-color: var(--danger) !important; }
+  .bloco.com-erro .erro-msg { display: block; }
+
+  /* Botão submit */
+  .btn-submit-wrap {
+    padding: 1.5rem 1.5rem 0;
+  }
+  .btn-submit {
+    width: 100%;
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 24px;
+    font-family: var(--fonte-corpo);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .02em;
+    transition: background .15s, transform .1s;
+  }
+  .btn-submit:hover { background: var(--verde-mid); }
+  .btn-submit:active { transform: scale(.99); }
+  .btn-submit:disabled { background: var(--cinza-3); cursor: not-allowed; }
+
+  /* Tela de sucesso */
+  .sucesso {
+    display: none;
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+  .sucesso.visivel { display: block; }
+  .sucesso-icone {
+    width: 64px; height: 64px;
+    background: var(--verde-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+  }
+  .sucesso h2 {
+    font-family: var(--fonte-titulo);
+    font-size: 1.5rem;
+    color: var(--verde);
+    margin-bottom: .75rem;
+  }
+  .sucesso p {
+    font-size: .9rem;
+    color: var(--cinza-2);
+    line-height: 1.6;
+  }
+
+  /* Toast de erro de rede */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #2d2d2a;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: .875rem;
+    transition: transform .3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.visivel { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 480px) {
+    .form-header { padding: 1.5rem 1.25rem 1.25rem; }
+    .bloco { margin: 1.25rem .75rem 0; padding: 1rem 1rem; }
+    .btn-submit-wrap { padding: 1.25rem .75rem 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="form-header">
+    <div class="logo">COOPANEST-PE · Pesquisa Operacional</div>
+    <h1 id="form-titulo">Carregando...</h1>
+    <p id="form-subtitulo"></p>
+    <div class="tempo-badge">Tempo estimado: 3 minutos</div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <div class="form-body">
+    <div id="form-conteudo"></div>
+
+    <div class="sucesso" id="sucesso">
+      <div class="sucesso-icone">✓</div>
+      <h2>Resposta registrada!</h2>
+      <p>Obrigado pela sua contribuição.<br>Seus dados ajudarão a melhorar o fluxo de produção para todos os cooperados.</p>
+    </div>
+
+    <div class="btn-submit-wrap" id="btn-wrap">
+      <button class="btn-submit" id="btn-submit" onclick="enviarForm()">
+        Enviar resposta
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJRXAjoKPHcZOBY18mHgq7MKPuNp7ph-EnOESgJCrefY_69rQ5giIJwQXFPOWpZ2pz6w/exec";
+
+const PESQUISA_CONFIG = {"id":"pesquisa-producao-2025","titulo":"Fluxo de entrega de produção","subtitulo":"Ajude-nos a entender seu processo atual de documentação. São 3 minutos.","versao":"1.0","blocos":[{"id":"b1","titulo":"Identificação","obrigatorio":false,"perguntas":[{"id":"nome_crm","texto":"Nome ou CRM","tipo":"texto","placeholder":"Deixe em branco para resposta anônima"}]},{"id":"b2","titulo":"Preenchimento dos documentos","badge":"foco principal","obrigatorio":true,"perguntas":[{"id":"quando_preenche","texto":"Como você costuma preencher boletins e o mapa de produção?","subtexto":"Considere seu comportamento habitual, não o ideal.","tipo":"radio","opcoes":["Preencho durante o próprio plantão, antes de sair","Levo para casa e preencho nos dias seguintes","Varia — às vezes no plantão, às vezes depois","Acumulo e preencho tudo perto do final do mês"]}]},{"id":"b3","titulo":"Barreiras no preenchimento","obrigatorio":true,"perguntas":[{"id":"barreiras","texto":"O que mais dificulta preencher a documentação ainda durante o plantão?","subtexto":"Pode marcar mais de uma opção.","tipo":"checkbox","opcoes":["Plantão muito corrido — não sobra tempo","Falta de local adequado para sentar e preencher","Os formulários não estão disponíveis no hospital","Prefiro preencher com calma em casa","Não sabia que deveria ser feito durante o plantão","Outro motivo"],"temOutro":true}]},{"id":"b4","titulo":"Devolução ao hospital","obrigatorio":true,"perguntas":[{"id":"quando_devolve","texto":"Se você preenche fora do hospital, quando costuma devolver os documentos ao serviço?","subtexto":"Se preenche sempre durante o plantão, selecione a última opção.","tipo":"radio","opcoes":["No próprio plantão seguinte (mesma semana)","No plantão seguinte, mas pode demorar 2 semanas ou mais","Acumulo e levo tudo de uma vez no final do mês","Não se aplica — sempre preencho durante o plantão"]}]},{"id":"b5","titulo":"Entrega à cooperativa","obrigatorio":true,"perguntas":[{"id":"como_entrega_coop","texto":"Depois que o auditor carimba seus documentos, como eles chegam à COOPANEST?","tipo":"radio","opcoes":["Eu mesmo recolho e levo à cooperativa na mesma semana","Eu mesmo recolho, mas levo só no final do mês","Deixo no hospital e não sei ao certo como chega à cooperativa","Um colega ou funcionário leva por mim"]}]},{"id":"b6","titulo":"Abertura para mudança","obrigatorio":false,"perguntas":[{"id":"receptividade","texto":"Se a cooperativa organizasse uma forma de recolher sua documentação auditada diretamente no hospital, você utilizaria?","subtexto":"Estamos estudando alternativas — ainda não há decisão tomada.","tipo":"radio","opcoes":["Sim, com certeza","Provavelmente sim","Tanto faz","Prefiro continuar levando pessoalmente"]},{"id":"comentario","texto":"Algum comentário ou sugestão?","tipo":"textarea","placeholder":"Fique à vontade para descrever..."}]}]};
+
+let pesquisaConfig = null;
+const respostas = {};
+
+function init() {
+  pesquisaConfig = PESQUISA_CONFIG;
+  renderForm(pesquisaConfig);
+}
+
+// ── RENDERIZAÇÃO ──────────────────────────────────────────────────────────────
+
+const corPorBloco = ['', 'b-producao', 'b-barreira', 'b-devolucao', 'b-entrega', 'b-mudanca'];
+
+function renderForm(cfg) {
+  document.title = `COOPANEST — ${cfg.titulo}`;
+  document.getElementById('form-titulo').textContent = cfg.titulo;
+  document.getElementById('form-subtitulo').textContent = cfg.subtitulo || '';
+
+  const container = document.getElementById('form-conteudo');
+  container.innerHTML = '';
+
+  cfg.blocos.forEach((bloco, bi) => {
+    const div = document.createElement('div');
+    div.className = `bloco ${corPorBloco[bi] || ''}`;
+    div.id = `bloco-${bloco.id}`;
+
+    const badges = [];
+    if (!bloco.obrigatorio) badges.push('<span class="badge badge-opt">opcional</span>');
+    else badges.push('<span class="badge badge-req">obrigatório</span>');
+    if (bloco.badge) badges.push(`<span class="badge badge-key">${bloco.badge}</span>`);
+
+    div.innerHTML = `
+      <div class="bloco-meta">
+        <span class="bloco-num">Bloco ${bi + 1} — ${bloco.titulo}</span>
+        ${badges.join('')}
+      </div>
+    `;
+
+    bloco.perguntas.forEach(p => {
+      div.appendChild(renderPergunta(p));
+    });
+
+    div.innerHTML += `<div class="erro-msg" id="erro-${bloco.id}">Por favor, responda esta pergunta antes de continuar.</div>`;
+    container.appendChild(div);
+  });
+
+  atualizarProgresso();
+}
+
+function renderPergunta(p) {
+  const wrap = document.createElement('div');
+  wrap.className = 'pergunta';
+
+  let html = `<div class="pergunta-texto">${p.texto}</div>`;
+  if (p.subtexto) html += `<div class="pergunta-sub">${p.subtexto}</div>`;
+
+  if (p.tipo === 'radio') {
+    html += `<div class="opcoes" id="opts-${p.id}">`;
+    p.opcoes.forEach((op, i) => {
+      html += `
+        <label class="opcao-label" id="lbl-${p.id}-${i}">
+          <input type="radio" name="${p.id}" value="${op}"
+            onchange="selecionarOpcao('${p.id}', ${i}, false, this.value)">
+          ${op}
+        </label>`;
+    });
+    html += `</div>`;
+
+  } else if (p.tipo === 'checkbox') {
+    html += `<div class="opcoes" id="opts-${p.id}">`;
+    p.opcoes.forEach((op, i) => {
+      const isOutro = p.temOutro && i === p.opcoes.length - 1;
+      html += `
+        <label class="opcao-label" id="lbl-${p.id}-${i}">
+          <input type="checkbox" name="${p.id}" value="${op}"
+            onchange="selecionarCheckbox('${p.id}', ${i}, this.value, this.checked, ${isOutro})">
+          ${op}
+        </label>`;
+      if (isOutro) {
+        html += `<div class="campo-outro" id="outro-${p.id}">
+          <input type="text" placeholder="Descreva o motivo..." id="outro-txt-${p.id}"
+            oninput="respostas['${p.id}_outro'] = this.value; atualizarProgresso()">
+        </div>`;
+      }
+    });
+    html += `</div>`;
+
+  } else if (p.tipo === 'texto') {
+    html += `<input type="text" id="inp-${p.id}" placeholder="${p.placeholder || ''}"
+      oninput="respostas['${p.id}'] = this.value; atualizarProgresso()">`;
+
+  } else if (p.tipo === 'textarea') {
+    html += `<textarea id="inp-${p.id}" placeholder="${p.placeholder || ''}"
+      oninput="respostas['${p.id}'] = this.value; atualizarProgresso()"></textarea>`;
+  }
+
+  wrap.innerHTML = html;
+  return wrap;
+}
+
+// ── INTERAÇÃO ─────────────────────────────────────────────────────────────────
+
+function selecionarOpcao(perguntaId, idx, isCheck, valor) {
+  respostas[perguntaId] = valor;
+  // Visual
+  document.querySelectorAll(`#opts-${perguntaId} .opcao-label`).forEach((l, i) => {
+    l.classList.toggle('selecionada', i === idx);
+  });
+  limparErro(perguntaId);
+  atualizarProgresso();
+}
+
+function selecionarCheckbox(perguntaId, idx, valor, checked, isOutro) {
+  if (!respostas[perguntaId]) respostas[perguntaId] = [];
+  if (checked) {
+    if (!respostas[perguntaId].includes(valor)) respostas[perguntaId].push(valor);
+  } else {
+    respostas[perguntaId] = respostas[perguntaId].filter(v => v !== valor);
+  }
+  document.getElementById(`lbl-${perguntaId}-${idx}`)?.classList.toggle('selecionada', checked);
+  if (isOutro) {
+    const campo = document.getElementById(`outro-${perguntaId}`);
+    if (campo) campo.classList.toggle('visivel', checked);
+  }
+  limparErro(perguntaId);
+  atualizarProgresso();
+}
+
+function limparErro(perguntaId) {
+  // Encontra o bloco que contém esta pergunta e remove o estado de erro
+  pesquisaConfig?.blocos?.forEach(bloco => {
+    if (bloco.perguntas.some(p => p.id === perguntaId)) {
+      document.getElementById(`bloco-${bloco.id}`)?.classList.remove('com-erro');
+    }
+  });
+}
+
+// ── PROGRESSO ─────────────────────────────────────────────────────────────────
+
+function atualizarProgresso() {
+  if (!pesquisaConfig) return;
+  const obrigatorios = pesquisaConfig.blocos
+    .filter(b => b.obrigatorio)
+    .flatMap(b => b.perguntas.filter(p => ['radio','checkbox'].includes(p.tipo)));
+
+  const respondidos = obrigatorios.filter(p => {
+    const r = respostas[p.id];
+    return Array.isArray(r) ? r.length > 0 : !!r;
+  });
+
+  const pct = obrigatorios.length ? (respondidos.length / obrigatorios.length) * 100 : 0;
+  document.getElementById('progress').style.width = pct + '%';
+}
+
+// ── ENVIO ─────────────────────────────────────────────────────────────────────
+
+function validarForm() {
+  let valido = true;
+  pesquisaConfig.blocos.forEach(bloco => {
+    if (!bloco.obrigatorio) return;
+    const blocoEl = document.getElementById(`bloco-${bloco.id}`);
+    let blocoValido = true;
+
+    bloco.perguntas.forEach(p => {
+      if (!['radio','checkbox'].includes(p.tipo)) return;
+      const r = respostas[p.id];
+      const respondido = Array.isArray(r) ? r.length > 0 : !!r;
+      if (!respondido) blocoValido = false;
+    });
+
+    if (!blocoValido) {
+      blocoEl?.classList.add('com-erro');
+      valido = false;
+    }
+  });
+  return valido;
+}
+
+async function enviarForm() {
+  if (!validarForm()) {
+    // Rola até o primeiro erro
+    const primeiroErro = document.querySelector('.bloco.com-erro');
+    if (primeiroErro) primeiroErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  const payload = {
+    action: 'submit',
+    pesquisaId: pesquisaConfig.id,
+    pesquisaTitulo: pesquisaConfig.titulo,
+    respondente: respostas['nome_crm'] || 'Anônimo',
+    respostas
+  };
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, { redirect: "follow",
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      document.getElementById('form-conteudo').style.display = 'none';
+      document.getElementById('btn-wrap').style.display = 'none';
+      document.getElementById('sucesso').classList.add('visivel');
+      document.getElementById('progress').style.width = '100%';
+    } else {
+      mostrarToast('Erro ao enviar: ' + (data.error || 'tente novamente'));
+      btn.disabled = false;
+      btn.textContent = 'Enviar resposta';
+    }
+  } catch (e) {
+    mostrarToast('Sem conexão — verifique a internet e tente novamente.');
+    btn.disabled = false;
+    btn.textContent = 'Enviar resposta';
+  }
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visivel');
+  setTimeout(() => t.classList.remove('visivel'), 4000);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
